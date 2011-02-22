@@ -1,0 +1,7 @@
+{
+	"name": "GNote",
+	"description": "A native applet for GNote",
+	"uuid": "GS-Gnote@sardemff7.net",
+	"url": "",
+	"shell-version": ["2.91.6"]
+}
