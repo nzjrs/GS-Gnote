@@ -53,37 +53,35 @@ Indicator.prototype = {
 
 		this._dbus = new GnoteProxy(DBus.session, GNOTE_DBUS_NAME, GNOTE_DBUS_REMOTECONTROL_PATH);
 
+		this._notes = new PopupMenu.PopupMenuSection();
 		Mainloop.timeout_add(2000, Lang.bind(this, this._refreshNotes));
+		this.menu.addMenuItem(this._notes);
+
+		this._controls = new PopupMenu.PopupMenuSection();
+		this._controls.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+		this._controls.addAction(_("Create a new Note"), Lang.bind(this, function() { this._dbus.CreateNoteRemote(); }));
+		this.menu.addMenuItem(this._controls);
 
 		this._dbus.connect('NoteAdded', Lang.bind(this, this._noteAdded));
 		this._dbus.connect('NoteDeleted', Lang.bind(this, this._noteDeleted));
 	},
 
 	_refreshNotes: function() {
-		this.menu.removeAll();
-		this._dbus.ListAllNotesRemote(Lang.bind(this, this._addNotesSyncWrapper));
-	},
-
-	_addNotesSyncWrapper: function(list, i) {
-		if ( !i ) i = 0;
-		if ( i < list.length )
-		{
-			let uri = list[i];
-			this._dbus.GetNoteTitleRemote(uri, Lang.bind(this, function(name) {
-				let note = new PopupMenu.PopupMenuItem(name);
-				note.connect('activate', Lang.bind(this, function(actor, event) {
-					this._dbus.DisplayNoteRemote(uri);
+		this._dbus.ListAllNotesRemote(Lang.bind(this, function(list) {
+			this._notes.removeAll();
+			for ( var i = 0 ; i < list.length ; ++i )
+			{
+				let uri = list[i];
+				this._dbus.GetNoteTitleRemote(uri, Lang.bind(this, function(name) {
+					let note = new PopupMenu.PopupMenuItem(name);
+					note.connect('activate', Lang.bind(this, function(actor, event) {
+						this._dbus.DisplayNoteRemote(uri);
+					}));
+					this._notes.addMenuItem(note);
 				}));
-				this.menu.addMenuItem(note);
-				this._addNotesSyncWrapper(list, i+1);
-			}));
 
-		}
-		else
-		{
-			this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-			this.menu.addAction(_("Create a new Note"), Lang.bind(this, function() { this._dbus.CreateNoteRemote(); }));
-		}
+			}
+		}));
 	},
 
 	_noteAdded: function(uri) {
@@ -95,8 +93,13 @@ Indicator.prototype = {
 	}
 };
 
+let _initted = false;
 function main() {
-	Main.StatusIconDispatcher.STANDARD_TRAY_ICON_IMPLEMENTATIONS['gnote'] = 'gnote';
-	Panel.STANDARD_TRAY_ICON_ORDER.unshift('gnote');
-	Panel.STANDARD_TRAY_ICON_SHELL_IMPLEMENTATION['gnote'] = Indicator;
+	if ( ! _initted )
+	{
+		Main.StatusIconDispatcher.STANDARD_TRAY_ICON_IMPLEMENTATIONS['gnote'] = 'gnote';
+		Panel.STANDARD_TRAY_ICON_ORDER.unshift('gnote');
+		Panel.STANDARD_TRAY_ICON_SHELL_IMPLEMENTATION['gnote'] = Indicator;
+		_initted = true;
+	}
 }
