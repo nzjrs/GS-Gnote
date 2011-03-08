@@ -67,21 +67,28 @@ Indicator.prototype = {
 	},
 
 	_refreshNotes: function() {
-		this._dbus.ListAllNotesRemote(Lang.bind(this, function(list) {
-			this._notes.removeAll();
-			for ( var i = 0 ; i < list.length ; ++i )
-			{
-				let uri = list[i];
-				this._dbus.GetNoteTitleRemote(uri, Lang.bind(this, function(name) {
-					let note = new PopupMenu.PopupMenuItem(name);
-					note.connect('activate', Lang.bind(this, function(actor, event) {
-						this._dbus.DisplayNoteRemote(uri);
-					}));
-					this._notes.addMenuItem(note);
+		this._dbus.ListAllNotesRemote(Lang.bind(this, this._addNotes));
+	},
+	
+	_addNotes: function(list) {
+		if ( list == null )
+		{
+			Mainloop.timeout_add(500, Lang.bind(this, this._refreshNotes));
+			return;
+		}
+		this._notes.removeAll();
+		for ( var i = 0 ; i < list.length ; ++i )
+		{
+			let uri = list[i];
+			this._dbus.GetNoteTitleRemote(uri, Lang.bind(this, function(name) {
+				let note = new PopupMenu.PopupMenuItem(name);
+				note.connect('activate', Lang.bind(this, function(actor, event) {
+					this._dbus.DisplayNoteRemote(uri);
 				}));
+				this._notes.addMenuItem(note);
+			}));
 
-			}
-		}));
+		}
 	},
 
 	_noteAdded: function(uri) {
