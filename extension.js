@@ -53,14 +53,16 @@ Indicator.prototype = {
 
 		this._dbus = new GnoteProxy(DBus.session, GNOTE_DBUS_NAME, GNOTE_DBUS_REMOTECONTROL_PATH);
 
-		this._notes = new PopupMenu.PopupMenuSection();
-		Mainloop.timeout_add(2000, Lang.bind(this, this._refreshNotes));
-		this.menu.addMenuItem(this._notes);
-
 		this._controls = new PopupMenu.PopupMenuSection();
-		this._controls.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 		this._controls.addAction(_("Create a new Note"), Lang.bind(this, function() { this._dbus.CreateNoteRemote(); }));
 		this.menu.addMenuItem(this._controls);
+
+		this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+		this._notes = new PopupMenu.PopupMenuSection();
+        this._start_note = null;
+		Mainloop.timeout_add(2000, Lang.bind(this, this._refreshNotes));
+		this.menu.addMenuItem(this._notes);
 
 		this._dbus.connect('NoteAdded', Lang.bind(this, this._noteAdded));
 		this._dbus.connect('NoteDeleted', Lang.bind(this, this._noteDeleted));
@@ -76,6 +78,7 @@ Indicator.prototype = {
 			Mainloop.timeout_add(500, Lang.bind(this, this._refreshNotes));
 			return;
 		}
+
 		this._notes.removeAll();
 		for ( var i = 0 ; i < list.length ; ++i )
 		{
@@ -85,7 +88,14 @@ Indicator.prototype = {
 				note.connect('activate', Lang.bind(this, function(actor, event) {
 					this._dbus.DisplayNoteRemote(uri);
 				}));
-				this._notes.addMenuItem(note);
+                if ( name == 'Start Here' ) {
+                    if ( this._start_note == null ) {
+                        this._start_note = note;
+                        this._controls.addMenuItem(note);
+                    }
+                } else {
+				    this._notes.addMenuItem(note);
+                }
 			}));
 
 		}
