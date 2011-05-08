@@ -3,5 +3,5 @@
 	"description": "A native applet for GNote",
 	"uuid": "GS-Gnote@sardemff7.net",
 	"url": "https://github.com/sardemff7/GS-Gnote",
-	"shell-version": ["2.91.90", "2.91.91"]
+	"shell-version": ["2.91.90", "2.91.91", "3.0.0", "3.0.1"]
 }
